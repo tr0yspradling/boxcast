@@ -9,7 +9,10 @@ __version__ = '0.1.1'
 import requests
 import json
 import base64
+import logging
 from urllib.parse import unquote
+
+logger = logging.getLogger(__name__)
 
 
 class BoxCastClient(object):
@@ -72,11 +75,14 @@ class BoxCastClient(object):
                                  headers=self.__auth_headers(),
                                  auth=(self.client_id, self.client_secret),
                                  data=self.__auth_params().get('params'))
-
+        logging.info(response)
         if response.ok:
+            logging.info('Authorization successful. Saving OAuth access_token.')
             self.access_token = response.json().get('access_token')
         else:
             # Add BoxCast info
+            logging.error('Authorization request failed!')
+            logging.error(response.json())
             raise Exception(response.json())
 
     def _get(self, endpoint, headers=None):
@@ -86,7 +92,13 @@ class BoxCastClient(object):
             headers.update(self.__general_headers())
         response = requests.get(endpoint, headers=headers)
         if response.content is not b'':
+            logging.info(response)
+            logging.info(response.json())
             return response.headers, response.json()
+
+        logging.error('Request failed!')
+        logging.error(response)
+        logging.error(response.json())
 
     def get(self, endpoint):
         """ Returns JSON payload """
