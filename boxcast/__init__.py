@@ -88,11 +88,11 @@ class BoxCastClient(object):
         if response.content is not b'':
             return response.headers, response.json()
 
-    def get(self, endpoint, headers=None):
+    def get(self, endpoint):
         """ Returns JSON payload """
         return self._get(endpoint)[1]
 
-    def get_paginated(self, endpoint, headers=None):
+    def get_paginated(self, endpoint):
         """ Blocking function. Returns a list of results. """
         results_list = []
         # _get returns (headers, json_body), so we have to use _get(x)[1]
@@ -243,9 +243,12 @@ class BoxCastResource(object):
         for attr, value in self.__dict__.items():
             yield attr, value
 
-    def __repr__(self, id='', name=''):
-        return '<{resource} ({id}) Name: {name}>'.format(
-               resource=self.__class__.__name__, id=self.id, name=self.name)
+    def __repr__(self):
+        if hasattr(self, 'id') and hasattr(self, 'name'):
+            return '<{resource} ({id}) Name: {name}>'.format(
+                   resource=self.__class__.__name__, id=self.id, name=self.name)
+        else:
+            return '<{resource}>'.format(resource=self.__class__.__name__)
 
 
 class Account(BoxCastResource):
