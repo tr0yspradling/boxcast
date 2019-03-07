@@ -36,12 +36,16 @@ class BoxCastClient(object):
         'token': 'https://auth.boxcast.com/oauth2/token'
     }
 
-    def __init__(self, client_id, client_secret):
+    def __init__(self, client_id, client_secret, logger=None):
         self.access_token = None
         self.client_id = client_id
         self.client_secret = client_secret
         auth_str = ('%s:%s' % (self.client_id, self.client_secret)).encode()
         self.basic_auth_token = base64.b64encode(auth_str).decode('UTF-8')
+        if logger:
+            self.logger = logger
+        else:
+            self.logger = logging.getLogger(__name__)
         self.authorize()
 
     @staticmethod
