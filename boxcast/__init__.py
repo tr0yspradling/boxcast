@@ -79,14 +79,14 @@ class BoxCastClient(object):
                                  headers=self.__auth_headers(),
                                  auth=(self.client_id, self.client_secret),
                                  data=self.__auth_params().get('params'))
-        logging.info(response)
+        self.logger.info(response)
         if response.ok:
             logging.info('Authorization successful. Saving OAuth access_token.')
             self.access_token = response.json().get('access_token')
         else:
             # Add BoxCast info
-            logging.error('Authorization request failed!')
-            logging.error(response.json())
+            self.logger.error('Authorization request failed!')
+            self.logger.error(response.json())
             raise Exception(response.json())
 
     def _get(self, endpoint, headers=None):
@@ -96,13 +96,13 @@ class BoxCastClient(object):
             headers.update(self.__general_headers())
         response = requests.get(endpoint, headers=headers)
         if response.content is not b'':
-            logging.info(response)
-            logging.info(response.json())
+            self.logger.info(response)
+            self.logger.info(response.json())
             return response.headers, response.json()
 
-        logging.error('Request failed!')
-        logging.error(response)
-        logging.error(response.json())
+        self.logger.error('Request failed!')
+        self.logger.error(response)
+        self.logger.error(response.json())
 
     def get(self, endpoint):
         """ Returns JSON payload """
