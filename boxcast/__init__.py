@@ -25,6 +25,7 @@ class BoxCastClient(object):
         'channels': 'https://api.boxcast.com/account/channels',
         'channel_details': 'https://api.boxcast.com/account/channels/{id}',
         'channel_broadcasts': 'https://api.boxcast.com/channels/{id}/broadcasts',
+        'account_broadcasts': 'https://api.boxcast.com/broadcasts/',
         'broadcast_detail': 'https://api.boxcast.com/broadcasts/{id}',
         'broadcast_view': 'https://api.boxcast.com/broadcasts/{id}/view',
         'boxcasters': 'https://api.boxcast.com/boxcasters',
