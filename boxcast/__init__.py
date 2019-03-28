@@ -118,14 +118,17 @@ class BoxCastClient(object):
         response = self._get(url)
         for _result in response[1]:
             results_list.append(_result)
-        pagination_header_json = json.loads(response[0]['X-Pagination'])
-        while 'last' in pagination_header_json:
-            next = pagination_header_json['next']
-            url = endpoint + self.__prep_pagination_args(next, sort_order='')
-            _response = self._get(url)
-            for _result in _response[1]:
-                results_list.append(_result)
-            pagination_header_json = json.loads(_response[0]['X-Pagination'])
+
+        req_pagination_json = response[0].get('X-Pagination')
+        if req_pagination_json:
+            pagination_header_json = json.loads(response[0]['X-Pagination'])
+            while 'last' in pagination_header_json:
+                next = pagination_header_json['next']
+                url = endpoint + self.__prep_pagination_args(next, sort_order='')
+                _response = self._get(url)
+                for _result in _response[1]:
+                    results_list.append(_result)
+                pagination_header_json = json.loads(_response[0]['X-Pagination'])
         return results_list
 
     def get_account(self):
