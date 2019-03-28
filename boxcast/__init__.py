@@ -158,9 +158,8 @@ class BoxCastClient(object):
         pass
 
     def get_current_or_upcoming_broadcasts(self):
-        channel_id = self.get_account().channel_id
-        endpoint = self.resource_endpoints['channel_broadcasts'].format(id=channel_id) + '?q=timeframe:current%20timeframe:future'
-        result_list = self.get(endpoint)
+        endpoint = self.resource_endpoints['account_broadcasts'] + '?q=timeframe:current%20timeframe:future'
+        result_list = self.get_paginated(endpoint)
         broadcast_list = []
         for _broadcast in result_list:
             broadcast = Broadcast(**_broadcast)
