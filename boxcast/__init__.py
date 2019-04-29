@@ -10,7 +10,8 @@ import requests
 import json
 import base64
 import logging
-from urllib.parse import unquote
+from urllib.parse import unquote, urlencode, urlparse, parse_qs
+from helpers import merge_url_query_params
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,13 @@ class BoxCastClient(object):
 
     @staticmethod
     def __prep_pagination_args(page_number=0, limit_size=50, sort_order=''):
-        return '?p={0}&s={1}&l={2}'.format(page_number, sort_order, limit_size)
+        args = {
+            'p': page_number,
+            's': sort_order,
+            'l': limit_size
+        }
+        # return '?p={0}&s={1}&l={2}'.format(page_number, sort_order, limit_size)
+        return args
 
     def authorize(self):
         """ Authorize & retrieve access_token. """
@@ -95,7 +102,9 @@ class BoxCastClient(object):
         if not headers:
             headers = {}
             headers.update(self.__general_headers())
+
         response = requests.get(endpoint, headers=headers)
+
         if response.content is not b'':
             self.logger.info(response)
             self.logger.info(response.json())
@@ -109,26 +118,47 @@ class BoxCastClient(object):
         """ Returns JSON payload """
         return self._get(endpoint)[1]
 
-    def get_paginated(self, endpoint):
+    def get_paginated(self, endpoint, args=None):
         """ Blocking function. Returns a list of results. """
         results_list = []
         # _get returns (headers, json_body), so we have to use _get(x)[1]
 
-        url = endpoint + self.__prep_pagination_args(sort_order='')
-        response = self._get(url)
-        for _result in response[1]:
-            results_list.append(_result)
+        req_args = {}
+        req_args.update(self.__prep_pagination_args(sort_order=''))
 
-        req_pagination_json = response[0].get('X-Pagination')
-        if req_pagination_json:
-            pagination_header_json = json.loads(response[0]['X-Pagination'])
-            while 'last' in pagination_header_json:
-                next = pagination_header_json['next']
-                url = endpoint + self.__prep_pagination_args(next, sort_order='')
+        # If additional args for search or filtering are supplied
+        if args:
+            req_args.update(args)
+
+        url = merge_url_query_params(endpoint, req_args)
+
+        print(url)
+
+        req_headers, req_response = self._get(url)
+        if req_response:
+            for _result in req_response:
+                results_list.append(_result)
+
+        req_header_json = req_headers.get('X-Pagination')
+
+        if req_header_json:
+            pagination_header_json = json.loads(req_header_json)
+            print('pagination_header_json: %s' % pagination_header_json)
+            for page in range(1, pagination_header_json['last']):
+                print('Page: %s' % page)
+                next = pagination_header_json.get('next')
+                if next:
+                    print('NEXT URL: %s' % next)
+                    url = merge_url_query_params(next, self.__prep_pagination_args(page))
+
                 _response = self._get(url)
                 for _result in _response[1]:
                     results_list.append(_result)
-                pagination_header_json = json.loads(_response[0]['X-Pagination'])
+
+                sub_req_pag_header = _response[0].get('X-Pagination')
+                if sub_req_pag_header:
+                    pagination_header_json = json.loads(sub_req_pag_header)
+
         return results_list
 
     def get_account(self):
@@ -162,8 +192,16 @@ class BoxCastClient(object):
         pass
 
     def get_current_or_upcoming_broadcasts(self):
-        endpoint = self.resource_endpoints['account_broadcasts'] + '?q=timeframe:current%20timeframe:future'
-        result_list = self.get_paginated(endpoint)
+        endpoint = self.resource_endpoints['account_broadcasts']
+
+        # args = '?q=timeframe:current%20timeframe:future'
+
+        args = {
+            'q': 'timeframe:current timeframe:future'
+        }
+
+        result_list = self.get_paginated(endpoint, args)
+
         broadcast_list = []
         for _broadcast in result_list:
             broadcast = Broadcast(**_broadcast)
@@ -192,12 +230,11 @@ class BoxCastClient(object):
 
     def get_account_broadcasts(self):
         """
-        Returns summary fields for all broadcasts on the current account.
+        Returns summary fields for all public broadcasts on the current account.
         Please be aware that the results may be paginated.
         """
-        channel_id = self.get_account().channel_id
         response = self.get_paginated(
-            self.resource_endpoints['channel_broadcasts'].format(id=channel_id))
+            self.resource_endpoints['account_broadcasts'])
         return [Broadcast(**_broadcast) for _broadcast in response]
 
     def get_account_broadcasts_with_view(self):
@@ -303,3 +340,17 @@ class BroadcastView(BoxCastResource):
 class Channel(BoxCastResource):
     def __init__(self, **kwargs):
         super(Channel, self).__init__(**kwargs)
+
+
+def setup_boxcast_client():
+    # boxcast_config_file = open('boxcast_credentials.json')
+    creds = {
+        "client_id": "rtsgtcaju4qinhac2n9b",
+        "client_secret": "yLTwNOKlOHq0Qu5vjJ3ySyUmJ-1fypayMWC67CcZSGMiiyURSe4oANgrvn06i8cpXMRQdqJWbEkbGpMi"
+    }
+    print('Setup BoxCastClient with config: %s' % creds)
+    return BoxCastClient(**creds)
+
+
+boxcast_client = setup_boxcast_client()
+print(boxcast_client.get_account_broadcasts())
