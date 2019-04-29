@@ -11,7 +11,7 @@ import json
 import base64
 import logging
 from urllib.parse import unquote, urlencode, urlparse, parse_qs
-from helpers import merge_url_query_params
+from .helpers import merge_url_query_params
 
 logger = logging.getLogger(__name__)
 
@@ -340,17 +340,3 @@ class BroadcastView(BoxCastResource):
 class Channel(BoxCastResource):
     def __init__(self, **kwargs):
         super(Channel, self).__init__(**kwargs)
-
-
-def setup_boxcast_client():
-    # boxcast_config_file = open('boxcast_credentials.json')
-    creds = {
-        "client_id": "rtsgtcaju4qinhac2n9b",
-        "client_secret": "yLTwNOKlOHq0Qu5vjJ3ySyUmJ-1fypayMWC67CcZSGMiiyURSe4oANgrvn06i8cpXMRQdqJWbEkbGpMi"
-    }
-    print('Setup BoxCastClient with config: %s' % creds)
-    return BoxCastClient(**creds)
-
-
-boxcast_client = setup_boxcast_client()
-print(boxcast_client.get_account_broadcasts())
